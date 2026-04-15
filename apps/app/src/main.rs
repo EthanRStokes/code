@@ -7,7 +7,7 @@
 use native_dialog::{DialogBuilder, MessageLevel};
 use std::env;
 use std::sync::atomic::Ordering;
-use tauri::{Listener, Manager};
+use tauri::{Cef, Listener, Manager};
 use tauri_plugin_fs::FsExt;
 use theseus::prelude::*;
 
@@ -25,7 +25,7 @@ mod updater_impl_noop;
 // Should be called in launcher initialization
 #[tracing::instrument(skip_all)]
 #[tauri::command]
-async fn initialize_state(app: tauri::AppHandle) -> api::Result<()> {
+async fn initialize_state(app: tauri::AppHandle<Cef>) -> api::Result<()> {
     tracing::info!("Initializing app event state...");
     theseus::EventState::init(app.clone()).await?;
 
@@ -46,7 +46,7 @@ async fn initialize_state(app: tauri::AppHandle) -> api::Result<()> {
 // Should be call once Vue has mounted the app
 #[tracing::instrument(skip_all)]
 #[tauri::command]
-fn show_window(app: tauri::AppHandle) {
+fn show_window(app: tauri::AppHandle<Cef>) {
     let win = app.get_window("main").unwrap();
     if let Err(e) = win.show() {
         DialogBuilder::message()
@@ -83,7 +83,7 @@ pub use updater_impl_noop::*;
 
 // Toggles decorations
 #[tauri::command]
-async fn toggle_decorations(b: bool, window: tauri::Window) -> api::Result<()> {
+async fn toggle_decorations(b: bool, window: tauri::Window<Cef>) -> api::Result<()> {
     window.set_decorations(b).map_err(|e| {
         theseus::Error::from(theseus::ErrorKind::OtherError(format!(
             "Failed to toggle decorations: {e}"
@@ -93,7 +93,7 @@ async fn toggle_decorations(b: bool, window: tauri::Window) -> api::Result<()> {
 }
 
 #[tauri::command]
-fn restart_app(app: tauri::AppHandle) {
+fn restart_app(app: tauri::AppHandle<Cef>) {
     app.restart();
 }
 
@@ -132,7 +132,7 @@ fn main() {
 
     tracing::info!("Initialized tracing subscriber. Loading Modrinth App!");
 
-    let mut builder = tauri::Builder::default();
+    let mut builder = tauri::Builder::<tauri::Cef>::default();
 
     #[cfg(feature = "updater")]
     {
