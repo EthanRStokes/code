@@ -76,7 +76,7 @@ sqlx = { workspace = true, features = [
 sysinfo = { workspace = true, features = ["disk", "system"] }
 tauri = { workspace = true, default-features = false, features = ["compression", "common-controls-v6", "dynamic-acl", "x11", "cef", "unstable"], optional = true }
 tauri-runtime-cef = { workspace = true, optional = true }
-#cef = { workspace = true, optional = true }
+cef = { workspace = true, optional = true }
 tempfile = { workspace = true }
 thiserror = { workspace = true }
 tokio = { workspace = true, features = [
