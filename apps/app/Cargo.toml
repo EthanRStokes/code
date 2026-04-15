@@ -45,6 +45,9 @@ workspace = true
 default-features = false
 features = ["compression", "common-controls-v6", "dynamic-acl", "x11", "cef", "devtools", "macos-private-api", "protocol-asset"]
 
+[dependencies.tauri-runtime-cef]
+workspace = true
+
 [build-dependencies]
 tauri-build = { workspace = true, features = ["codegen", "cef"] }
 

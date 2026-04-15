@@ -431,7 +431,8 @@ fn get_device_pixel_ratio<R: Runtime>(
 }
 
 #[tauri::command]
-#[cfg(not(target_os = "linux"))]
+//#[cfg(not(target_os = "linux"))]
+#[cfg(feature = "ads")]
 pub async fn init_ads_window<R: Runtime>(
     app: tauri::AppHandle<R>,
     dpr: f32,
@@ -653,7 +654,7 @@ pub async fn init_ads_window<R: Runtime>(
 
 // TODO: make ads work on linux
 #[tauri::command]
-#[cfg(target_os = "linux")]
+#[cfg(any(target_os = "linux", not(feature = "ads")))]
 pub async fn init_ads_window() {}
 
 #[tauri::command]
