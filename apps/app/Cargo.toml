@@ -53,7 +53,7 @@ urlencoding = { workspace = true }
 uuid = { workspace = true, features = ["serde", "v4"] }
 
 [build-dependencies]
-tauri-build = { workspace = true, features = ["codegen"] }
+tauri-build = { workspace = true, features = ["codegen", "cef"] }
 
 [target.'cfg(target_os = "linux")'.dependencies]
 tauri-plugin-updater = { workspace = true, optional = true }
