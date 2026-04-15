@@ -17,7 +17,7 @@ members = [
 
 [workspace.package]
 edition = "2024"
-rust-version = "1.90.0"
+rust-version = "1.94.1"
 repository = "https://github.com/modrinth/code"
 
 [workspace.dependencies]
@@ -134,7 +134,7 @@ rand = "=0.8.5"  # Locked on 0.8 until argon2 and p256 update to 0.9
 rand_chacha = "=0.3.1"  # Locked on 0.3 until we can update rand to 0.9
 redis = "0.32.7"
 regex = "1.12.2"
-reqwest = { version = "0.12.24", default-features = false }
+reqwest = { version = "0.13.2", default-features = false }
 rgb = "0.8.52"
 rust_decimal = { version = "1.39.0", features = [
   "serde-with-float",
@@ -175,20 +175,22 @@ strum = "0.27.2"
 syn = { version = "2.0" }
 sysinfo = { version = "0.37.2", default-features = false }
 tar = "0.4.44"
-tauri = "2.8.5"
-tauri-build = "2.4.1"
-tauri-plugin-deep-link = "2.4.3"
-tauri-plugin-dialog = "2.4.0"
-tauri-plugin-fs = "2.4.5"
-tauri-plugin-http = "2.5.7"
-tauri-plugin-opener = "2.5.0"
-tauri-plugin-os = "2.3.1"
-tauri-plugin-single-instance = "2.3.4"
-tauri-plugin-updater = { version = "2.9.0", default-features = false, features = [
+tauri = { git = "https://github.com/tauri-apps/tauri", branch = "feat/cef", default-features = false, features = ["compression", "common-controls-v6", "dynamic-acl", "x11", "cef"] }
+tauri-runtime-cef = { git = "https://github.com/tauri-apps/tauri", branch = "feat/cef", features = ["devtools"] }
+#cef = "^146.4.1"
+tauri-build = { git = "https://github.com/tauri-apps/tauri", branch = "feat/cef" }
+tauri-plugin-deep-link = { git = "https://github.com/EthanRStokes/plugins-workspace" }
+tauri-plugin-dialog = { git = "https://github.com/EthanRStokes/plugins-workspace" }
+tauri-plugin-fs = { git = "https://github.com/EthanRStokes/plugins-workspace" }
+tauri-plugin-http = { git = "https://github.com/EthanRStokes/plugins-workspace" }
+tauri-plugin-opener = { git = "https://github.com/EthanRStokes/plugins-workspace" }
+tauri-plugin-os = { git = "https://github.com/EthanRStokes/plugins-workspace" }
+tauri-plugin-single-instance = { git = "https://github.com/EthanRStokes/plugins-workspace" }
+tauri-plugin-updater = { git = "https://github.com/EthanRStokes/plugins-workspace", default-features = false, features = [
   "rustls-tls",
   "zip",
 ] }
-tauri-plugin-window-state = "2.4.0"
+tauri-plugin-window-state = { git = "https://github.com/EthanRStokes/plugins-workspace" }
 tempfile = "3.23.0"
 theseus = { path = "packages/app-lib" }
 thiserror = "2.0.17"
