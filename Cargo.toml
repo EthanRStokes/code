@@ -178,7 +178,7 @@ tar = "0.4.44"
 tauri = { git = "https://github.com/tauri-apps/tauri", branch = "feat/cef", default-features = false, features = ["compression", "common-controls-v6", "dynamic-acl", "x11", "cef"] }
 tauri-runtime-cef = { git = "https://github.com/tauri-apps/tauri", branch = "feat/cef", features = ["devtools"] }
 cef = "^146.4.1+146.0.9"
-tauri-build = { git = "https://github.com/tauri-apps/tauri", branch = "feat/cef" }
+tauri-build = { git = "https://github.com/tauri-apps/tauri", branch = "feat/cef", features = ["cef"] }
 tauri-plugin-deep-link = { git = "https://github.com/EthanRStokes/plugins-workspace" }
 tauri-plugin-dialog = { git = "https://github.com/EthanRStokes/plugins-workspace" }
 tauri-plugin-fs = { git = "https://github.com/EthanRStokes/plugins-workspace" }
