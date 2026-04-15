@@ -5,6 +5,7 @@ use chrono::{DateTime, Utc};
 use dashmap::DashMap;
 use serde::{Deserialize, Serialize};
 use std::{path::PathBuf, sync::Arc};
+use tauri::Cef;
 #[cfg(feature = "tauri")]
 use tauri::Emitter;
 use tokio::sync::OnceCell;
@@ -18,13 +19,13 @@ static EVENT_STATE: OnceCell<Arc<EventState>> = OnceCell::const_new();
 pub struct EventState {
     /// Tauri app
     #[cfg(feature = "tauri")]
-    pub app: tauri::AppHandle,
+    pub app: tauri::AppHandle<Cef>,
     pub loading_bars: DashMap<Uuid, LoadingBar>,
 }
 
 impl EventState {
     #[cfg(feature = "tauri")]
-    pub async fn init(app: tauri::AppHandle) -> crate::Result<Arc<Self>> {
+    pub async fn init(app: tauri::AppHandle<Cef>) -> crate::Result<Arc<Self>> {
         EVENT_STATE
             .get_or_try_init(|| async {
                 Ok(Arc::new(Self {
@@ -60,7 +61,7 @@ impl EventState {
     }
 
     #[cfg(feature = "tauri")]
-    pub async fn get_main_window() -> crate::Result<Option<tauri::WebviewWindow>>
+    pub async fn get_main_window() -> crate::Result<Option<tauri::WebviewWindow<Cef>>>
     {
         use tauri::Manager;
         let value = Self::get()?;
