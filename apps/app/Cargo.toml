@@ -22,16 +22,6 @@ path-util = { workspace = true }
 serde = { workspace = true, features = ["derive"] }
 serde_json = { workspace = true }
 serde_with = { workspace = true }
-tauri = { workspace = true, default-features = false, features = [
-	"compression",
-	"common-controls-v6",
-	"dynamic-acl",
-	"x11",
-	"cef",
-  "devtools",
-  "macos-private-api",
-  "protocol-asset",
-] }
 tauri-runtime-cef = { workspace = true }
 #cef = { workspace = true }
 tauri-plugin-deep-link = { workspace = true }
@@ -52,8 +42,23 @@ url = { workspace = true }
 urlencoding = { workspace = true }
 uuid = { workspace = true, features = ["serde", "v4"] }
 
+[dependencies.tauri]
+git = "https://github.com/tauri-apps/tauri"
+rev = "562bc59"
+default-features = false
+features = [
+	"compression",
+	"common-controls-v6",
+	"dynamic-acl",
+	"x11",
+	"cef",
+	"devtools",
+	"macos-private-api",
+	"protocol-asset",
+]
+
 [build-dependencies]
-tauri-build = { workspace = true, features = ["codegen", "cef"] }
+tauri-build = { workspace = true, features = ["codegen"] }
 
 [target.'cfg(target_os = "linux")'.dependencies]
 tauri-plugin-updater = { workspace = true, optional = true }
@@ -65,10 +70,12 @@ windows-core.workspace = true
 [features]
 # by default Tauri runs in production mode
 # when `tauri dev` runs it is executed with `cargo run --no-default-features` if `devPath` is an URL
-default = ["custom-protocol"]
+default = ["custom-protocol", "cef"]
 # this feature is used for production builds where `devPath` points to the filesystem
 # DO NOT remove this
 custom-protocol = ["tauri/custom-protocol"]
+# forward cef feature so tauri-cli feature detection works for bundling
+cef = ["tauri/cef"]
 updater = []
 
 [lints]
