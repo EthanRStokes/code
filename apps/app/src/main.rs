@@ -245,8 +245,14 @@ fn main() {
         .plugin(api::tags::init())
         .plugin(api::utils::init())
         .plugin(api::cache::init())
-        .plugin(api::files::init())
-        .plugin(api::ads::init())
+        .plugin(api::files::init());
+
+    #[cfg(feature = "ads")]
+    {
+        builder = builder.plugin(api::ads::init());
+    }
+
+    builder = builder
         .plugin(api::friends::init())
         .plugin(api::worlds::init())
         .manage(PendingUpdateData::default())
