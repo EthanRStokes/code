@@ -180,10 +180,10 @@ strum = "0.28.0"
 syn = { version = "2.0" }
 sysinfo = { version = "0.38.4", default-features = false }
 tar = "0.4.45"
-tauri = { git = "https://github.com/tauri-apps/tauri", rev = "562bc59", default-features = false, features = ["compression", "common-controls-v6", "dynamic-acl", "x11", "cef"] }
-tauri-runtime-cef = { git = "https://github.com/tauri-apps/tauri", rev = "562bc59", features = ["devtools"] }
+tauri = { git = "https://github.com/tauri-apps/tauri", rev = "3b5ccb3", default-features = false, features = ["compression", "common-controls-v6", "dynamic-acl", "x11", "cef"] }
+tauri-runtime-cef = { git = "https://github.com/tauri-apps/tauri", rev = "3b5ccb3", features = ["devtools"] }
 #cef = "^146.4.1+146.0.9"
-tauri-build = { git = "https://github.com/tauri-apps/tauri", rev = "562bc59" }
+tauri-build = { git = "https://github.com/tauri-apps/tauri", rev = "3b5ccb3" }
 tauri-plugin-deep-link = { git = "https://github.com/tauri-apps/plugins-workspace", branch = "feat/cef" }
 tauri-plugin-dialog = { git = "https://github.com/tauri-apps/plugins-workspace", branch = "feat/cef" }
 tauri-plugin-fs = { git = "https://github.com/tauri-apps/plugins-workspace", branch = "feat/cef" }
@@ -236,9 +236,9 @@ zip = { version = "6.0.0", default-features = false, features = [
 zxcvbn = "3.1.1"
 
 [patch.crates-io]
-tauri = { git = "https://github.com/tauri-apps/tauri.git", rev = "562bc59" }
-tauri-utils = { git = "https://github.com/tauri-apps/tauri.git", rev = "562bc59" }
-tauri-plugin = { git = "https://github.com/tauri-apps/tauri.git", rev = "562bc59" }
+tauri = { git = "https://github.com/tauri-apps/tauri.git", rev = "3b5ccb3" }
+tauri-utils = { git = "https://github.com/tauri-apps/tauri.git", rev = "3b5ccb3" }
+tauri-plugin = { git = "https://github.com/tauri-apps/tauri.git", rev = "3b5ccb3" }
 
 [workspace.lints.clippy]
 bool_to_int_with_if = "warn"
