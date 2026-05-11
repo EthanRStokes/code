@@ -83,6 +83,7 @@ fn configure_ads_cookie_settings(
     }
 }
 
+#[cfg(feature = "ads")]
 fn set_webview_visible<R: Runtime>(
     webview: &tauri::Webview<R>,
     _visible: bool,
@@ -101,6 +102,7 @@ fn set_webview_visible<R: Runtime>(
         .ok();
 }
 
+#[cfg(feature = "ads")]
 fn set_webview_visible_for_window<R: Runtime>(
     app: &tauri::AppHandle<R>,
     webview: &tauri::Webview<R>,
@@ -114,6 +116,7 @@ fn set_webview_visible_for_window<R: Runtime>(
     set_webview_visible(webview, visible && !is_minimized);
 }
 
+#[cfg(feature = "ads")]
 fn sync_webview_visibility_for_main_window<R: Runtime>(
     app: &tauri::AppHandle<R>,
     main_window: &tauri::Window<R>,
@@ -159,6 +162,7 @@ fn sync_webview_visibility_for_main_window<R: Runtime>(
     }
 }
 
+#[cfg(feature = "ads")]
 pub fn init<R: Runtime>() -> TauriPlugin<R> {
     tauri::plugin::Builder::<R>::new("ads")
         .setup(|app, _api| {
@@ -229,6 +233,7 @@ pub fn init<R: Runtime>() -> TauriPlugin<R> {
         .build()
 }
 
+#[cfg(feature = "ads")]
 fn get_webview_position<R: Runtime>(
     app: &tauri::AppHandle<R>,
     dpr: f32,
@@ -249,7 +254,7 @@ fn get_webview_position<R: Runtime>(
 }
 
 #[tauri::command]
-//#[cfg(not(target_os = "linux"))]
+#[cfg(not(target_os = "linux"))]
 #[cfg(feature = "ads")]
 pub async fn init_ads_window<R: Runtime>(
     app: tauri::AppHandle<R>,
@@ -466,6 +471,7 @@ pub async fn init_ads_window<R: Runtime>(
 pub async fn init_ads_window() {}
 
 #[tauri::command]
+#[cfg(feature = "ads")]
 pub async fn show_ads_window<R: Runtime>(
     app: tauri::AppHandle<R>,
     dpr: f32,
