@@ -190,18 +190,18 @@ tar = "0.4.45"
 tauri = { git = "https://github.com/tauri-apps/tauri", rev = "7372c8e", default-features = false, features = ["compression", "common-controls-v6", "dynamic-acl", "x11", "cef"] }
 tauri-runtime-cef = { git = "https://github.com/tauri-apps/tauri", rev = "7372c8e", features = ["devtools"] }
 tauri-build = { git = "https://github.com/tauri-apps/tauri", rev = "7372c8e" }
-tauri-plugin-deep-link = { git = "https://github.com/tauri-apps/plugins-workspace", branch = "feat/cef" }
-tauri-plugin-dialog = { git = "https://github.com/tauri-apps/plugins-workspace", branch = "feat/cef" }
-tauri-plugin-fs = { git = "https://github.com/tauri-apps/plugins-workspace", branch = "feat/cef" }
-tauri-plugin-http = { git = "https://github.com/tauri-apps/plugins-workspace", branch = "feat/cef" }
-tauri-plugin-opener = { git = "https://github.com/tauri-apps/plugins-workspace", branch = "feat/cef" }
-tauri-plugin-os = { git = "https://github.com/tauri-apps/plugins-workspace", branch = "feat/cef" }
-tauri-plugin-single-instance = { git = "https://github.com/tauri-apps/plugins-workspace", branch = "feat/cef" }
-tauri-plugin-updater = { git = "https://github.com/tauri-apps/plugins-workspace", branch = "feat/cef", default-features = false, features = [
+tauri-plugin-deep-link = { git = "https://github.com/EthanRStokes/plugins-workspace", branch = "feat/cef" }
+tauri-plugin-dialog = { git = "https://github.com/EthanRStokes/plugins-workspace", branch = "feat/cef" }
+tauri-plugin-fs = { git = "https://github.com/EthanRStokes/plugins-workspace", branch = "feat/cef" }
+tauri-plugin-http = { git = "https://github.com/EthanRStokes/plugins-workspace", branch = "feat/cef" }
+tauri-plugin-opener = { git = "https://github.com/EthanRStokes/plugins-workspace", branch = "feat/cef" }
+tauri-plugin-os = { git = "https://github.com/EthanRStokes/plugins-workspace", branch = "feat/cef" }
+tauri-plugin-single-instance = { git = "https://github.com/EthanRStokes/plugins-workspace", branch = "feat/cef" }
+tauri-plugin-updater = { git = "https://github.com/EthanRStokes/plugins-workspace", branch = "feat/cef", default-features = false, features = [
   "rustls-tls",
   "zip",
 ] }
-tauri-plugin-window-state = { git = "https://github.com/tauri-apps/plugins-workspace", branch = "feat/cef" }
+tauri-plugin-window-state = { git = "https://github.com/EthanRStokes/plugins-workspace", branch = "feat/cef" }
 tempfile = "3.23.0"
 theseus = { path = "packages/app-lib" }
 thiserror = "2.0.8"
