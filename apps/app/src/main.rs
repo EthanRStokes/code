@@ -247,7 +247,6 @@ fn main() {
         .plugin(api::cache::init())
         .plugin(api::files::init());
 
-    #[cfg(feature = "ads")]
     {
         builder = builder.plugin(api::ads::init());
     }
