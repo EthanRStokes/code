@@ -44,7 +44,7 @@ uuid = { workspace = true, features = ["serde", "v4"] }
 [dependencies.tauri]
 workspace = true
 default-features = false
-features = ["compression", "common-controls-v6", "dynamic-acl", "x11", "cef", "devtools", "macos-private-api", "protocol-asset"]
+features = ["compression", "common-controls-v6", "dynamic-acl", "devtools", "macos-private-api", "protocol-asset"]
 
 [dependencies.tauri-runtime-cef]
 workspace = true
