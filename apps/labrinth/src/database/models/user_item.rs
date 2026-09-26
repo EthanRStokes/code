@@ -1,24 +1,28 @@
 use super::ids::{DBProjectId, DBUserId};
 use super::{DBCollectionId, DBReportId, DBThreadId};
+use crate::database::models::DBOrganizationId;
 use crate::database::models::charge_item::DBCharge;
+use crate::database::models::thread_item::ThreadMessageBuilder;
 use crate::database::models::user_subscription_item::DBUserSubscription;
-use crate::database::models::{DBOrganizationId, DatabaseError};
-use crate::database::redis::RedisPool;
 use crate::database::{PgTransaction, models};
 use crate::models::billing::ChargeStatus;
+use crate::models::projects::ProjectStatus;
+use crate::models::threads::MessageBody;
 use crate::models::users::Badges;
-use crate::util::error::Context;
 use ariadne::ids::base62_impl::{parse_base62, to_base62};
 use chrono::{DateTime, Utc};
 use dashmap::DashMap;
+use eyre::{Result, WrapErr};
+use futures::TryStreamExt;
 use rust_decimal::Decimal;
 use serde::{Deserialize, Serialize};
 use std::fmt::{Debug, Display};
 use std::hash::Hash;
+use xredis::RedisPool;
 
-const USERS_NAMESPACE: &str = "users:v1";
-const USER_USERNAMES_NAMESPACE: &str = "users_usernames:v1";
-const USERS_PROJECTS_NAMESPACE: &str = "users_projects:v1";
+const USERS_NAMESPACE: &str = "users:v4";
+const USER_USERNAMES_NAMESPACE: &str = "users_usernames:v4";
+const USERS_PROJECTS_NAMESPACE: &str = "users_projects:v4";
 
 #[derive(Deserialize, Serialize, Clone, Debug)]
 pub struct DBUser {
@@ -77,7 +81,7 @@ impl DBUser {
     pub async fn insert(
         &self,
         transaction: &mut PgTransaction<'_>,
-    ) -> Result<(), sqlx::error::Error> {
+    ) -> std::result::Result<(), sqlx::error::Error> {
         sqlx::query!(
             "
             INSERT INTO users (
@@ -130,33 +134,35 @@ impl DBUser {
         string: &str,
         executor: E,
         redis: &RedisPool,
-    ) -> Result<Option<DBUser>, DatabaseError>
+    ) -> Result<Option<DBUser>>
     where
         E: crate::database::Executor<'a, Database = sqlx::Postgres>,
     {
         DBUser::get_many(&[string], executor, redis)
             .await
             .map(|x| x.into_iter().next())
+            .wrap_err("getting user")
     }
 
     pub async fn get_id<'a, 'b, E>(
         id: DBUserId,
         executor: E,
         redis: &RedisPool,
-    ) -> Result<Option<DBUser>, DatabaseError>
+    ) -> Result<Option<DBUser>>
     where
         E: crate::database::Executor<'a, Database = sqlx::Postgres>,
     {
         DBUser::get_many(&[ariadne::ids::UserId::from(id)], executor, redis)
             .await
             .map(|x| x.into_iter().next())
+            .wrap_err("getting user by id")
     }
 
     pub async fn get_many_ids<'a, E>(
         user_ids: &[DBUserId],
         exec: E,
         redis: &RedisPool,
-    ) -> Result<Vec<DBUser>, DatabaseError>
+    ) -> Result<Vec<DBUser>>
     where
         E: crate::database::Executor<'a, Database = sqlx::Postgres>,
     {
@@ -164,7 +170,9 @@ impl DBUser {
             .iter()
             .map(|x| ariadne::ids::UserId::from(*x))
             .collect::<Vec<_>>();
-        DBUser::get_many(&ids, exec, redis).await
+        DBUser::get_many(&ids, exec, redis)
+            .await
+            .wrap_err("getting users by id")
     }
 
     pub async fn get_many<
@@ -175,7 +183,7 @@ impl DBUser {
         users_strings: &[T],
         exec: E,
         redis: &RedisPool,
-    ) -> Result<Vec<DBUser>, DatabaseError>
+    ) -> Result<Vec<DBUser>>
     where
         E: crate::database::Executor<'a, Database = sqlx::Postgres>,
     {
@@ -197,7 +205,7 @@ impl DBUser {
                     .map(|x| x.to_string().to_lowercase())
                     .collect::<Vec<_>>();
 
-                let users = sqlx::query!(
+                sqlx::query!(
                     "
                     SELECT id, email,
                         avatar_url, raw_avatar_url, username, bio,
@@ -271,17 +279,16 @@ impl DBUser {
                         acc.insert(u.id, (Some(u.username), user));
                         async move { Ok(acc) }
                     })
-                    .await?;
-
-                Ok(users)
-            }).await?;
+                    .await
+            }).await
+            .wrap_err("getting users from cache or database")?;
         Ok(val)
     }
 
     pub async fn search<'a, E>(
         query: &str,
         exec: E,
-    ) -> Result<Vec<DBSearchUser>, sqlx::Error>
+    ) -> std::result::Result<Vec<DBSearchUser>, sqlx::Error>
     where
         E: crate::database::Executor<'a, Database = sqlx::Postgres>,
     {
@@ -316,10 +323,30 @@ impl DBUser {
         Ok(users)
     }
 
+    pub async fn get_by_discord_id<'a, E>(
+        discord_id: u64,
+        exec: E,
+    ) -> std::result::Result<Option<DBUserId>, sqlx::Error>
+    where
+        E: crate::database::Executor<'a, Database = sqlx::Postgres>,
+    {
+        let Ok(discord_id) = i64::try_from(discord_id) else {
+            return Ok(None);
+        };
+
+        sqlx::query_scalar!(
+            r#"SELECT id FROM users WHERE discord_id = $1"#,
+            discord_id
+        )
+        .fetch_optional(exec)
+        .await
+        .map(|id| id.map(DBUserId))
+    }
+
     pub async fn get_by_email<'a, E>(
         email: &str,
         exec: E,
-    ) -> Result<Option<DBUserId>, sqlx::Error>
+    ) -> std::result::Result<Option<DBUserId>, sqlx::Error>
     where
         E: crate::database::Executor<'a, Database = sqlx::Postgres>,
     {
@@ -340,7 +367,7 @@ impl DBUser {
     pub async fn get_by_case_insensitive_email<'a, E>(
         email: &str,
         exec: E,
-    ) -> Result<Vec<DBUserId>, sqlx::Error>
+    ) -> std::result::Result<Vec<DBUserId>, sqlx::Error>
     where
         E: crate::database::Executor<'a, Database = sqlx::Postgres>,
     {
@@ -362,7 +389,7 @@ impl DBUser {
     pub async fn exists_many<'a, E>(
         user_ids: &[DBUserId],
         exec: E,
-    ) -> Result<bool, sqlx::Error>
+    ) -> std::result::Result<bool, sqlx::Error>
     where
         E: crate::database::Executor<'a, Database = sqlx::Postgres>,
     {
@@ -381,21 +408,23 @@ impl DBUser {
         user_id: DBUserId,
         exec: E,
         redis: &RedisPool,
-    ) -> Result<Vec<DBProjectId>, DatabaseError>
+    ) -> Result<Vec<DBProjectId>>
     where
         E: crate::database::Executor<'a, Database = sqlx::Postgres>,
     {
         use futures::stream::TryStreamExt;
 
         {
-            let mut redis = redis.connect().await?;
+            let mut redis = redis
+                .connect()
+                .await
+                .wrap_err("connecting to redis for user projects")?;
+            let key = redis.key().entity(USERS_PROJECTS_NAMESPACE, user_id.0);
 
             let cached_projects = redis
-                .get_deserialized::<Vec<DBProjectId>>(
-                    USERS_PROJECTS_NAMESPACE,
-                    &user_id.0.to_string(),
-                )
-                .await?;
+                .get_deserialized::<Vec<DBProjectId>>(&key)
+                .await
+                .wrap_err("getting cached user projects")?;
 
             if let Some(projects) = cached_projects {
                 return Ok(projects);
@@ -414,18 +443,19 @@ impl DBUser {
         .fetch(exec)
         .map_ok(|m| DBProjectId(m.id))
         .try_collect::<Vec<DBProjectId>>()
-        .await?;
+        .await
+        .wrap_err("fetching user projects from database")?;
 
-        let mut redis = redis.connect().await?;
+        let mut redis = redis
+            .connect()
+            .await
+            .wrap_err("connecting to redis to cache user projects")?;
+        let key = redis.key().entity(USERS_PROJECTS_NAMESPACE, user_id.0);
 
         redis
-            .set_serialized(
-                USERS_PROJECTS_NAMESPACE,
-                user_id.0,
-                &db_projects,
-                None,
-            )
-            .await?;
+            .set_serialized(&key, &db_projects, None)
+            .await
+            .wrap_err("caching user projects")?;
 
         Ok(db_projects)
     }
@@ -433,7 +463,7 @@ impl DBUser {
     pub async fn get_organizations<'a, E>(
         user_id: DBUserId,
         exec: E,
-    ) -> Result<Vec<DBOrganizationId>, sqlx::Error>
+    ) -> std::result::Result<Vec<DBOrganizationId>, sqlx::Error>
     where
         E: crate::database::Executor<'a, Database = sqlx::Postgres>,
     {
@@ -458,7 +488,7 @@ impl DBUser {
     pub async fn get_collections<'a, E>(
         user_id: DBUserId,
         exec: E,
-    ) -> Result<Vec<DBCollectionId>, sqlx::Error>
+    ) -> std::result::Result<Vec<DBCollectionId>, sqlx::Error>
     where
         E: crate::database::Executor<'a, Database = sqlx::Postgres>,
     {
@@ -482,7 +512,7 @@ impl DBUser {
     pub async fn get_follows<'a, E>(
         user_id: DBUserId,
         exec: E,
-    ) -> Result<Vec<DBProjectId>, sqlx::Error>
+    ) -> std::result::Result<Vec<DBProjectId>, sqlx::Error>
     where
         E: crate::database::Executor<'a, Database = sqlx::Postgres>,
     {
@@ -506,7 +536,7 @@ impl DBUser {
     pub async fn get_reports<'a, E>(
         user_id: DBUserId,
         exec: E,
-    ) -> Result<Vec<DBReportId>, sqlx::Error>
+    ) -> std::result::Result<Vec<DBReportId>, sqlx::Error>
     where
         E: crate::database::Executor<'a, Database = sqlx::Postgres>,
     {
@@ -530,7 +560,7 @@ impl DBUser {
     pub async fn get_backup_codes<'a, E>(
         user_id: DBUserId,
         exec: E,
-    ) -> Result<Vec<String>, sqlx::Error>
+    ) -> std::result::Result<Vec<String>, sqlx::Error>
     where
         E: crate::database::Executor<'a, Database = sqlx::Postgres>,
     {
@@ -554,36 +584,52 @@ impl DBUser {
     pub async fn clear_caches(
         user_ids: &[(DBUserId, Option<String>)],
         redis: &RedisPool,
-    ) -> Result<(), DatabaseError> {
-        let mut redis = redis.connect().await?;
+    ) -> Result<()> {
+        let mut redis = redis
+            .connect()
+            .await
+            .wrap_err("connecting to redis to clear user caches")?;
+        let keys = user_ids
+            .iter()
+            .flat_map(|(id, username)| {
+                [
+                    Some(redis.key().entity(USERS_NAMESPACE, id.0)),
+                    username.as_ref().map(|username| {
+                        redis.key().entity(
+                            USER_USERNAMES_NAMESPACE,
+                            username.to_lowercase(),
+                        )
+                    }),
+                ]
+                .into_iter()
+                .flatten()
+            })
+            .collect::<Vec<_>>();
 
         redis
-            .delete_many(user_ids.iter().flat_map(|(id, username)| {
-                [
-                    (USERS_NAMESPACE, Some(id.0.to_string())),
-                    (
-                        USER_USERNAMES_NAMESPACE,
-                        username.clone().map(|i| i.to_lowercase()),
-                    ),
-                ]
-            }))
-            .await?;
+            .delete_many(&keys)
+            .await
+            .wrap_err("clearing user caches")?;
         Ok(())
     }
 
     pub async fn clear_project_cache(
         user_ids: &[DBUserId],
         redis: &RedisPool,
-    ) -> Result<(), DatabaseError> {
-        let mut redis = redis.connect().await?;
+    ) -> Result<()> {
+        let mut redis = redis
+            .connect()
+            .await
+            .wrap_err("connecting to redis to clear user project caches")?;
+        let keys = user_ids
+            .iter()
+            .map(|id| redis.key().entity(USERS_PROJECTS_NAMESPACE, id.0))
+            .collect::<Vec<_>>();
 
         redis
-            .delete_many(
-                user_ids.iter().map(|id| {
-                    (USERS_PROJECTS_NAMESPACE, Some(id.0.to_string()))
-                }),
-            )
-            .await?;
+            .delete_many(&keys)
+            .await
+            .wrap_err("clearing user project caches")?;
 
         Ok(())
     }
@@ -592,18 +638,126 @@ impl DBUser {
         id: DBUserId,
         transaction: &mut PgTransaction<'_>,
         redis: &RedisPool,
-    ) -> Result<Option<()>, eyre::Report> {
+    ) -> Result<Option<()>> {
         let user = Self::get_id(id, &mut *transaction, redis)
             .await
             .wrap_err("failed to get user by ID")?;
 
         if let Some(delete_user) = user {
+            let username = delete_user.username.clone();
             DBUser::clear_caches(&[(id, Some(delete_user.username))], redis)
                 .await
                 .wrap_err("failed to clear caches")?;
 
             let deleted_user: DBUserId =
                 crate::models::users::DELETED_USER.into();
+            let user_id_str = ariadne::ids::UserId::from(id).to_string();
+
+            let owned_projects = sqlx::query!(
+                r#"
+                SELECT
+                    m.id AS "id!",
+                    m.status AS "status!",
+                    m.slug,
+                    t.id AS "thread_id!"
+                FROM mods m
+                INNER JOIN team_members tm
+                    ON tm.team_id = m.team_id
+                    AND tm.user_id = $1
+                    AND tm.is_owner = TRUE
+                INNER JOIN threads t ON t.mod_id = m.id
+                "#,
+                id as DBUserId,
+            )
+            .fetch(&mut *transaction)
+            .try_collect::<Vec<_>>()
+            .await
+            .wrap_err("failed to fetch projects owned by deleted user")?;
+
+            for project in &owned_projects {
+                let thread_id = DBThreadId(project.thread_id);
+
+                ThreadMessageBuilder {
+                    author_id: Some(deleted_user),
+                    body: MessageBody::Text {
+                        body: format!(
+                            "Project transferred to Ghost when user account `{username}` (`{user_id_str}`) was deleted"
+                        ),
+                        private: true,
+                        replying_to: None,
+                        associated_images: Vec::new(),
+                    },
+                    thread_id,
+                    hide_identity: false,
+                }
+                .insert(&mut *transaction)
+                .await
+                .wrap_err(
+                    "failed to insert project transfer thread message",
+                )?;
+
+                if ProjectStatus::from_string(&project.status)
+                    == ProjectStatus::Processing
+                {
+                    ThreadMessageBuilder {
+                        author_id: Some(deleted_user),
+                        body: MessageBody::Text {
+                            body: format!(
+                                "Automatically rejected when user account `{username}` (`{user_id_str}`) was deleted"
+                            ),
+                            private: true,
+                            replying_to: None,
+                            associated_images: Vec::new(),
+                        },
+                        thread_id,
+                        hide_identity: false,
+                    }
+                    .insert(&mut *transaction)
+                    .await
+                    .wrap_err(
+                        "failed to insert automatic rejection thread message",
+                    )?;
+
+                    ThreadMessageBuilder {
+                        author_id: Some(deleted_user),
+                        body: MessageBody::StatusChange {
+                            new_status: ProjectStatus::Rejected,
+                            old_status: ProjectStatus::Processing,
+                        },
+                        thread_id,
+                        hide_identity: false,
+                    }
+                    .insert(&mut *transaction)
+                    .await
+                    .wrap_err(
+                        "failed to insert automatic rejection status change",
+                    )?;
+
+                    sqlx::query!(
+                        r#"
+                        UPDATE mods
+                        SET status = $1
+                        WHERE id = $2
+                        "#,
+                        ProjectStatus::Rejected.as_str(),
+                        project.id,
+                    )
+                    .execute(&mut *transaction)
+                    .await
+                    .wrap_err(
+                        "failed to reject processing project owned by deleted user",
+                    )?;
+                }
+
+                models::DBProject::clear_cache(
+                    DBProjectId(project.id),
+                    project.slug.clone(),
+                    None,
+                    redis,
+                )
+                .await
+                .wrap_err("failed to clear project cache")?;
+            }
 
             sqlx::query!(
                 "
@@ -631,7 +785,6 @@ impl DBUser {
             .await
             .wrap_err("failed to update versions author_id")?;
 
-            use futures::TryStreamExt;
             let notifications: Vec<i64> = sqlx::query!(
                 "
                 SELECT n.id FROM notifications n

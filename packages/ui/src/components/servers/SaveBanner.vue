@@ -1,24 +1,31 @@
 <template>
-	<Teleport to="body">
-		<FloatingActionBar :shown="props.isVisible">
+	<Teleport v-if="!saveBanner || saveBanner.target.value" :to="saveBanner?.target.value ?? 'body'">
+		<FloatingActionBar :shown="props.isVisible" :inline="!!saveBanner">
 			<p class="m-0 font-semibold text-sm md:text-base">You have unsaved changes.</p>
 			<div class="ml-auto flex gap-2">
-				<ButtonStyled type="transparent">
-					<button :disabled="props.isUpdating" @click="props.reset"><HistoryIcon /> Reset</button>
-				</ButtonStyled>
-				<ButtonStyled :color="props.restart ? 'standard' : 'brand'">
-					<button :disabled="props.isUpdating" @click="props.save">
-						<SpinnerIcon v-if="props.isUpdating" class="animate-spin" />
-						<SaveIcon v-else />
-						{{ props.isUpdating ? 'Saving...' : 'Save' }}
-					</button>
-				</ButtonStyled>
-				<ButtonStyled v-if="props.restart" color="brand">
-					<button :disabled="props.isUpdating || isTransitioning" @click="saveAndPower">
-						<SpinnerIcon v-if="props.isUpdating || isTransitioning" class="animate-spin" />
-						{{ powerButtonLabel }}
-					</button>
-				</ButtonStyled>
+				<Button type="quiet" :disabled="props.isUpdating" @click="props.reset"
+					><HistoryIcon /> Reset</Button
+				>
+				<Button
+					:type="props.restart ? 'base' : 'colored'"
+					:color="props.restart ? undefined : 'brand'"
+					:disabled="props.isUpdating"
+					@click="props.save"
+				>
+					<SpinnerIcon v-if="props.isUpdating" class="animate-spin" />
+					<SaveIcon v-else />
+					{{ props.isUpdating ? 'Saving...' : 'Save' }}
+				</Button>
+				<Button
+					v-if="props.restart"
+					type="colored"
+					color="brand"
+					:disabled="props.isUpdating || isTransitioning"
+					@click="saveAndPower"
+				>
+					<SpinnerIcon v-if="props.isUpdating || isTransitioning" class="animate-spin" />
+					{{ powerButtonLabel }}
+				</Button>
 			</div>
 		</FloatingActionBar>
 	</Teleport>
@@ -26,10 +33,11 @@
 
 <script setup lang="ts">
 import { HistoryIcon, SaveIcon, SpinnerIcon } from '@modrinth/assets'
-import { computed } from 'vue'
+import { computed, onBeforeUnmount, watch } from 'vue'
 
-import ButtonStyled from '#ui/components/base/ButtonStyled.vue'
+import { Button } from '#ui/components/base/buttons'
 import FloatingActionBar from '#ui/components/base/FloatingActionBar.vue'
+import { injectServerSettings } from '#ui/layouts/shared/server-settings/providers/server-settings'
 import { injectModrinthClient, injectModrinthServerContext } from '#ui/providers'
 
 const props = defineProps<{
@@ -40,6 +48,20 @@ const props = defineProps<{
 	isVisible: boolean
 	serverId: string
 }>()
+
+const saveBanner = injectServerSettings(null)?.saveBanner
+
+watch(
+	() => props.isVisible,
+	(shown) => {
+		if (saveBanner) saveBanner.shown.value = shown
+	},
+	{ immediate: true },
+)
+
+onBeforeUnmount(() => {
+	if (saveBanner) saveBanner.shown.value = false
+})
 
 const client = injectModrinthClient()
 

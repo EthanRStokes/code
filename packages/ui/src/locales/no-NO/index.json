@@ -383,15 +383,6 @@
   "content.inline-backup.world-label": {
     "defaultMessage": "verden"
   },
-  "content.modpack-card.content-hint-description": {
-    "defaultMessage": "Modpakkeinnholdet ditt kan nå bli funnet her!"
-  },
-  "content.modpack-card.content-hint-title": {
-    "defaultMessage": "Modpakkeinnhold flytta"
-  },
-  "content.modpack-card.dismiss-hint": {
-    "defaultMessage": "Ikke vis igjen"
-  },
   "content.page-layout.additional-content": {
     "defaultMessage": "Yttligere innhold"
   },
@@ -421,9 +412,6 @@
   },
   "content.page-layout.share.project-names": {
     "defaultMessage": "Prosjektnavn"
-  },
-  "content.page-layout.sort.alphabetical": {
-    "defaultMessage": "Alfabetisk"
   },
   "content.page-layout.sort.date-added-newest": {
     "defaultMessage": "Nyeste først"
@@ -457,12 +445,6 @@
   },
   "creation-flow.modal.custom-setup.game-version.search-placeholder": {
     "defaultMessage": "Søk etter spillversjon..."
-  },
-  "creation-flow.modal.custom-setup.icon.remove": {
-    "defaultMessage": "Fjern ikon"
-  },
-  "creation-flow.modal.custom-setup.icon.select": {
-    "defaultMessage": "Velg ikon"
   },
   "creation-flow.modal.custom-setup.loader-version-type.latest": {
     "defaultMessage": "Nyeste"
@@ -872,26 +854,8 @@
   "instances.content-install.new-tab": {
     "defaultMessage": "Ny instans"
   },
-  "instances.content-install.remove-icon": {
-    "defaultMessage": "Fjern ikon"
-  },
   "instances.content-install.search-placeholder": {
     "defaultMessage": "Søk etter instans"
-  },
-  "instances.content-install.select-icon": {
-    "defaultMessage": "Velg ikon"
-  },
-  "instances.modpack-content-modal.empty-title": {
-    "defaultMessage": "Ingen innhold funnet"
-  },
-  "instances.modpack-content-modal.loading": {
-    "defaultMessage": "Laster inn innhold..."
-  },
-  "instances.modpack-content-modal.no-results": {
-    "defaultMessage": "Ingen prosjekter samsvarte med søket ditt."
-  },
-  "instances.modpack-content-modal.search-placeholder": {
-    "defaultMessage": "Søk etter {count, number} {count, plural, one {prosjekt} other {prosjekter}}"
   },
   "instances.updater-modal.badge.current": {
     "defaultMessage": "Nåværende"
@@ -2258,9 +2222,6 @@
   "servers.list-empty.new-server-button": {
     "defaultMessage": "Ny server"
   },
-  "servers.list-empty.sign-in-button": {
-    "defaultMessage": "Logg inn"
-  },
   "servers.listing.notice.subscription-cancelled": {
     "defaultMessage": "Ditt abonnement ble kansellert."
   },
@@ -2375,9 +2336,6 @@
   "settings.display.theme.dark": {
     "defaultMessage": "Mørk"
   },
-  "settings.display.theme.description": {
-    "defaultMessage": "Velg ditt foretrukne fargetema for Modrinth på denne enheten."
-  },
   "settings.display.theme.light": {
     "defaultMessage": "Lys"
   },
@@ -2431,9 +2389,6 @@
   },
   "settings.pats.title": {
     "defaultMessage": "Personlig tilgang nøkler"
-  },
-  "settings.profile.title": {
-    "defaultMessage": "Offentlig profil"
   },
   "settings.sessions.title": {
     "defaultMessage": "Økter"

@@ -32,7 +32,7 @@
 						{{ formatMessage(messages.nameLabel) }}
 					</span>
 				</label>
-				<StyledInput
+				<Input
 					id="name"
 					v-model="name"
 					:maxlength="64"
@@ -42,24 +42,33 @@
 					@update:model-value="updatedName()"
 				/>
 			</div>
-			<label for="slug" class="flex flex-col gap-2.5">
-				<span class="text-md font-semibold text-contrast">
+			<div
+				class="flex flex-col gap-2.5"
+				@focusin="onSlugSuggestionFocusIn"
+				@focusout="onSlugSuggestionFocusOut"
+			>
+				<label for="slug" class="text-md font-semibold text-contrast">
 					{{ formatMessage(messages.urlLabel) }}
-				</span>
-				<div class="text-input-wrapper !w-full">
-					<div class="text-input-wrapper__before">https://modrinth.com/project/</div>
-					<StyledInput
-						id="slug"
-						v-model="slug"
-						:maxlength="64"
-						class="w-full"
-						type="text"
-						autocomplete="off"
-						:disabled="hasHitLimit"
-						@update:model-value="manualSlug = true"
-					/>
-				</div>
-			</label>
+				</label>
+				<Input
+					id="slug"
+					v-model="slug"
+					:maxlength="64"
+					class="w-full"
+					type="text"
+					autocomplete="off"
+					:disabled="hasHitLimit"
+					@update:model-value="manualSlug = true"
+				>
+					<template #prefix>https://modrinth.com/project/</template>
+				</Input>
+				<SlugSuggestions
+					:selected="slug"
+					:suggestions="slugSuggestions"
+					:visible="showSlugSuggestions"
+					@select="selectSlugSuggestion"
+				/>
+			</div>
 			<div class="flex flex-col gap-2.5">
 				<label for="owner">
 					<span class="text-md font-semibold text-contrast">
@@ -100,10 +109,9 @@
 						{{ formatMessage(messages.summaryLabel) }}
 					</span>
 				</label>
-				<StyledInput
+				<Textarea
 					id="additional-information"
 					v-model="description"
-					multiline
 					:maxlength="256"
 					:placeholder="formatMessage(messages.summaryPlaceholder)"
 					:disabled="hasHitLimit"
@@ -111,18 +119,20 @@
 				<span>{{ formatMessage(messages.summaryDescription) }}</span>
 			</div>
 			<div class="flex justify-end gap-2.5">
-				<ButtonStyled type="outlined">
-					<button @click="cancel">
-						<XIcon aria-hidden="true" />
-						{{ formatMessage(commonMessages.cancelButton) }}
-					</button>
-				</ButtonStyled>
-				<ButtonStyled color="brand">
-					<button v-tooltip="missingFieldsTooltip" :disabled="disableCreate" @click="createProject">
-						<PlusIcon aria-hidden="true" />
-						{{ formatMessage(messages.createProject) }}
-					</button>
-				</ButtonStyled>
+				<Button type="outlined" @click="cancel">
+					<XIcon aria-hidden="true" />
+					{{ formatMessage(commonMessages.cancelButton) }}
+				</Button>
+				<Button
+					v-tooltip="missingFieldsTooltip"
+					type="colored"
+					color="brand"
+					:disabled="disableCreate"
+					@click="createProject"
+				>
+					<PlusIcon aria-hidden="true" />
+					{{ formatMessage(messages.createProject) }}
+				</Button>
 			</div>
 		</div>
 	</NewModal>
@@ -131,8 +141,8 @@
 <script setup lang="ts">
 import type { Labrinth } from '@modrinth/api-client'
 import { OrganizationIcon, PlusIcon, XIcon } from '@modrinth/assets'
+import { Button } from '@modrinth/ui'
 import {
-	ButtonStyled,
 	Chips,
 	Combobox,
 	type ComboboxOption,
@@ -140,13 +150,20 @@ import {
 	defineMessages,
 	injectModrinthClient,
 	injectNotificationManager,
+	Input,
 	NewModal,
-	StyledInput,
+	Textarea,
+	useDebugLogger,
 	useVIntl,
 } from '@modrinth/ui'
 import { computed, defineAsyncComponent, h } from 'vue'
 
-import { generateUrlSlug } from '~/utils/slugs'
+import SlugSuggestions from '~/components/ui/SlugSuggestions.vue'
+import {
+	generateUrlSlug,
+	useProjectSlugSuggestions,
+	useSlugSuggestionVisibility,
+} from '~/composables/project-slug-suggestions'
 
 import CreateLimitAlert from './CreateLimitAlert.vue'
 
@@ -162,6 +179,7 @@ interface ShowOptions {
 const { addNotification } = injectNotificationManager()
 const { formatMessage } = useVIntl()
 const router = useRouter()
+const debug = useDebugLogger('ProjectCreateModal')
 
 defineExpose({
 	show,
@@ -246,6 +264,18 @@ const messages = defineMessages({
 		id: 'create.project.missing-fields-tooltip',
 		defaultMessage: 'Missing fields: {fields}',
 	},
+	unknownUser: {
+		id: 'create.project.unknown-user',
+		defaultMessage: 'Unknown user',
+	},
+	userAvatarAlt: {
+		id: 'create.project.user-avatar-alt',
+		defaultMessage: 'User Avatar',
+	},
+	organizationIconAlt: {
+		id: 'create.project.organization-icon-alt',
+		defaultMessage: '{name} Icon',
+	},
 })
 
 const props = defineProps<{
@@ -259,6 +289,16 @@ const name = ref('')
 const slug = ref('')
 const description = ref('')
 const manualSlug = ref(false)
+const {
+	onFocusIn: onSlugSuggestionFocusIn,
+	onFocusOut: onSlugSuggestionFocusOut,
+	visible: showSlugSuggestions,
+} = useSlugSuggestionVisibility()
+const { checking: checkingSlugSuggestions, suggestions: slugSuggestions } =
+	useProjectSlugSuggestions({
+		title: name,
+		username: () => auth.value.user?.username,
+	})
 const projectType = ref<ProjectTypes>('project')
 const projectTypeOptions = computed<ComboboxOption<ProjectTypes>[]>(() => [
 	{
@@ -292,6 +332,8 @@ const visibility = ref<VisibilityOption>(visibilities.value[0])
 const disableCreate = computed(() => {
 	if (hasHitLimit.value) return true
 	if (!name.value.trim() || !slug.value.trim()) return true
+	if (!manualSlug.value && checkingSlugSuggestions.value) return true
+	if (!manualSlug.value && !slugSuggestions.value.includes(slug.value)) return true
 	if (description.value.trim().length < 3) return true
 	if (owner.value !== 'self' && !organizations.value.find((org) => org.id === owner.value))
 		return true
@@ -318,7 +360,7 @@ const cancel = () => {
 
 const userOption = computed(() => ({
 	value: 'self',
-	label: auth.value.user?.username || 'Unknown user',
+	label: auth.value.user?.username || formatMessage(messages.unknownUser),
 	icon: auth.value.user?.avatar_url
 		? markRaw(
 				defineAsyncComponent(() =>
@@ -326,7 +368,7 @@ const userOption = computed(() => ({
 						setup: () => () =>
 							h('img', {
 								src: auth.value.user?.avatar_url,
-								alt: 'User Avatar',
+								alt: formatMessage(messages.userAvatarAlt),
 								class: 'h-5 w-5 rounded-full',
 							}),
 					}),
@@ -357,7 +399,7 @@ async function fetchOrganizations() {
 								setup: () => () =>
 									h('img', {
 										src: org.icon_url,
-										alt: `${org.name} Icon`,
+										alt: formatMessage(messages.organizationIconAlt, { name: org.name }),
 										class: 'h-5 w-5 rounded',
 									}),
 							}),
@@ -378,6 +420,7 @@ async function fetchOrganizations() {
 }
 
 async function createProject() {
+	if (disableCreate.value) return
 	startLoading()
 
 	const formData = new FormData()
@@ -440,7 +483,7 @@ async function createProject() {
 				},
 			})) as Labrinth.Projects.v3.Project
 			createdProjectId = result.id
-			console.log(createdProjectId)
+			debug(createdProjectId)
 		}
 
 		modal.value?.hide()
@@ -461,6 +504,7 @@ async function show(event?: MouseEvent, options?: ShowOptions) {
 	slug.value = ''
 	description.value = ''
 	manualSlug.value = false
+	showSlugSuggestions.value = false
 	owner.value = 'self'
 	projectType.value = options?.type ?? 'project'
 	await fetchOrganizations()
@@ -472,4 +516,13 @@ function updatedName() {
 		slug.value = generateUrlSlug(name.value)
 	}
 }
+
+function selectSlugSuggestion(suggestion: string) {
+	slug.value = suggestion
+	manualSlug.value = true
+}
+
+watch([slugSuggestions, checkingSlugSuggestions], ([suggestions, checking]) => {
+	if (!manualSlug.value && !checking) slug.value = suggestions[0] ?? ''
+})
 </script>

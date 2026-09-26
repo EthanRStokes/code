@@ -1,6 +1,11 @@
 <template>
 	<div>
-		<NewModal ref="modalOpen" header="Transfer projects" no-padding width="60rem">
+		<NewModal
+			ref="modalOpen"
+			:header="formatMessage(messages.transferProjectsTitle)"
+			no-padding
+			width="60rem"
+		>
 			<div class="max-h-[70vh] overflow-y-auto">
 				<Table
 					class="!rounded-none !border-0"
@@ -12,7 +17,7 @@
 				>
 					<template #empty-state>
 						<div class="flex h-48 items-center justify-center text-secondary">
-							No projects available to transfer.
+							{{ formatMessage(messages.noProjectsAvailable) }}
 						</div>
 					</template>
 					<template #header-select>
@@ -38,7 +43,7 @@
 								<img
 									v-if="project.icon_url"
 									:src="project.icon_url"
-									:alt="'Icon for ' + project.title"
+									:alt="formatMessage(messages.projectIconAlt, { name: project.title })"
 									class="h-full w-full rounded object-cover"
 								/>
 								<BoxIcon v-else class="h-full w-full" />
@@ -60,38 +65,41 @@
 			</div>
 			<template #actions>
 				<div class="flex justify-end gap-2">
-					<ButtonStyled type="outlined">
-						<button @click="hide()">
-							<XIcon />
-							{{ formatMessage(commonMessages.cancelButton) }}
-						</button>
-					</ButtonStyled>
-					<ButtonStyled color="brand">
-						<button :disabled="selectedProjects.length === 0" @click="submitTransfer()">
-							<TransferIcon />
-							Transfer {{ selectedProjects.length }}
-							{{ selectedProjects.length === 1 ? 'project' : 'projects' }}
-						</button>
-					</ButtonStyled>
+					<Button type="outlined" @click="hide()">
+						<XIcon />
+						{{ formatMessage(commonMessages.cancelButton) }}
+					</Button>
+					<Button
+						type="colored"
+						color="brand"
+						:disabled="selectedProjects.length === 0"
+						@click="submitTransfer()"
+					>
+						<TransferIcon />
+						{{
+							formatMessage(messages.transferSelectedProjects, {
+								count: selectedProjects.length,
+							})
+						}}
+					</Button>
 				</div>
 			</template>
 		</NewModal>
-		<ButtonStyled>
-			<button @click="show($event)">
-				<TransferIcon />
-				<span>Transfer projects</span>
-			</button>
-		</ButtonStyled>
+		<Button @click="show($event)">
+			<TransferIcon />
+			<span>{{ formatMessage(messages.transferProjectsTitle) }}</span>
+		</Button>
 	</div>
 </template>
 
 <script setup>
 import { BoxIcon, TransferIcon, XIcon } from '@modrinth/assets'
 import {
-	ButtonStyled,
+	Button,
 	Checkbox,
 	commonMessages,
 	CopyCode,
+	defineMessages,
 	NewModal,
 	Table,
 	useVIntl,
@@ -112,10 +120,41 @@ const props = defineProps({
 const emit = defineEmits(['submit'])
 const { formatMessage } = useVIntl()
 
+const messages = defineMessages({
+	transferProjectsTitle: {
+		id: 'organization.project-transfer.title',
+		defaultMessage: 'Transfer projects',
+	},
+	noProjectsAvailable: {
+		id: 'organization.project-transfer.no-projects-available',
+		defaultMessage: 'No projects available to transfer.',
+	},
+	projectIconAlt: {
+		id: 'organization.project-transfer.project-icon-alt',
+		defaultMessage: 'Icon for {name}',
+	},
+	transferSelectedProjects: {
+		id: 'organization.project-transfer.transfer-selected-projects',
+		defaultMessage: 'Transfer {count, plural, one {# project} other {# projects}}',
+	},
+	nameColumn: {
+		id: 'organization.project-transfer.name-column',
+		defaultMessage: 'Name',
+	},
+	idColumn: {
+		id: 'organization.project-transfer.id-column',
+		defaultMessage: 'ID',
+	},
+	typeColumn: {
+		id: 'organization.project-transfer.type-column',
+		defaultMessage: 'Type',
+	},
+})
+
 const modalOpen = ref(null)
 const selectedProjectIds = ref([])
 
-const projectTableColumns = [
+const projectTableColumns = computed(() => [
 	{
 		key: 'select',
 		width: '3rem',
@@ -124,21 +163,21 @@ const projectTableColumns = [
 	},
 	{
 		key: 'name',
-		label: 'Name',
+		label: formatMessage(messages.nameColumn),
 		width: '22rem',
 	},
 	{
 		key: 'id',
-		label: 'ID',
+		label: formatMessage(messages.idColumn),
 		width: '13rem',
 		cellClass: '!overflow-visible',
 	},
 	{
 		key: 'type',
-		label: 'Type',
+		label: formatMessage(messages.typeColumn),
 		width: '10rem',
 	},
-]
+])
 
 const transferableProjects = computed(() =>
 	props.projects.filter((project) => !isProjectTransferDisabled(project)),
