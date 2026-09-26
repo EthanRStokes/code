@@ -1,8 +1,6 @@
 //! Theseus state management system
 use dashmap::DashMap;
 #[cfg(feature = "tauri")]
-use tauri::Cef;
-#[cfg(feature = "tauri")]
 use parking_lot::RwLock;
 use serde::{Deserialize, Serialize};
 #[cfg(feature = "export-ts")]
@@ -23,7 +21,7 @@ static EVENT_STATE: OnceCell<Arc<EventState>> = OnceCell::const_new();
 pub struct EventState {
     /// Tauri app
     #[cfg(feature = "tauri")]
-    pub app: tauri::AppHandle<Cef>,
+    pub app: tauri::AppHandle,
     #[cfg(feature = "tauri")]
     event_channel: RwLock<Channel<InvokeResponseBody>>,
     pub loading_bars: DashMap<Uuid, LoadingBar>,
@@ -32,7 +30,7 @@ pub struct EventState {
 impl EventState {
     #[cfg(feature = "tauri")]
     pub async fn init(
-        app: tauri::AppHandle<Cef>,
+        app: tauri::AppHandle,
         event_channel: Channel<InvokeResponseBody>,
     ) -> crate::Result<Arc<Self>> {
         let state = EVENT_STATE
@@ -90,7 +88,7 @@ impl EventState {
     /// The ads child webview makes the main window a multi-webview window,
     /// so Tauri's single-webview window lookup no longer returns it.
     #[cfg(feature = "tauri")]
-    pub async fn get_main_window() -> crate::Result<Option<tauri::Window<Cef>>> {
+    pub async fn get_main_window() -> crate::Result<Option<tauri::Window>> {
         use tauri::Manager;
         let value = Self::get();
         Ok(value.app.get_window("main"))

@@ -7,7 +7,7 @@
 use native_dialog::{DialogBuilder, MessageLevel};
 use std::env;
 use std::sync::atomic::Ordering;
-use tauri::{Cef, Listener, Manager};
+use tauri::{Listener, Manager};
 use tauri_plugin_fs::FsExt;
 use theseus::prelude::*;
 
@@ -25,7 +25,7 @@ mod updater_impl_noop;
 #[tracing::instrument(skip_all)]
 #[tauri::command]
 async fn initialize_state(
-    app: tauri::AppHandle<Cef>,
+    app: tauri::AppHandle,
     events: tauri::ipc::Channel<tauri::ipc::InvokeResponseBody>,
 ) -> api::Result<()> {
     tracing::info!("Initializing app event state...");
@@ -50,7 +50,7 @@ async fn initialize_state(
 // Should be call once Vue has mounted the app
 #[tracing::instrument(skip_all)]
 #[tauri::command]
-fn show_window(app: tauri::AppHandle<Cef>) {
+fn show_window(app: tauri::AppHandle) {
     let win = app.get_window("main").unwrap();
     if let Err(e) = win.show() {
         DialogBuilder::message()
@@ -87,7 +87,7 @@ pub use updater_impl_noop::*;
 
 // Toggles decorations
 #[tauri::command]
-async fn toggle_decorations(b: bool, window: tauri::Window<Cef>) -> api::Result<()> {
+async fn toggle_decorations(b: bool, window: tauri::Window) -> api::Result<()> {
     window.set_decorations(b).map_err(|e| {
         theseus::Error::from(theseus::ErrorKind::OtherError(format!(
             "Failed to toggle decorations: {e}"
@@ -97,7 +97,7 @@ async fn toggle_decorations(b: bool, window: tauri::Window<Cef>) -> api::Result<
 }
 
 #[tauri::command]
-fn restart_app(app: tauri::AppHandle<Cef>) {
+fn restart_app(app: tauri::AppHandle) {
     app.restart();
 }
 
@@ -114,6 +114,7 @@ async fn set_restart_after_pending_update(
 
 // if Tauri app is called with arguments, then those arguments will be treated as commands
 // ie: deep links or filepaths for .mrpacks
+#[tauri_runtime_cef::cef_entry_point]
 fn main() {
     #[cfg(feature = "export-app-events")]
     theseus::export_app_event_bindings(
@@ -143,7 +144,8 @@ fn main() {
 
     tracing::info!("Initialized tracing subscriber. Loading Modrinth App!");
 
-    let mut builder = tauri::Builder::<tauri::Cef>::default();
+    let mut builder = tauri::Builder::default()
+        .runtime(tauri_runtime_cef::Cef::default());
 
     #[cfg(target_os = "macos")]
     {
