@@ -212,7 +212,7 @@ tauri = { git = "https://github.com/tauri-apps/tauri", rev = "72025a3a7214d81ee0
 tauri-runtime-cef = { git = "https://github.com/tauri-apps/tauri", rev = "72025a3a7214d81ee001559455caff8d4d3fded8", features = ["devtools"] }
 tauri-build = { git = "https://github.com/tauri-apps/tauri", rev = "72025a3a7214d81ee001559455caff8d4d3fded8" }
 tauri-plugin-deep-link = { git = "https://github.com/tauri-apps/plugins-workspace", rev = "f2c77194d6fc35fdc24ea4db86c583c27cb6db4e" }
-tauri-plugin-dialog = { git = "https://github.com/tauri-apps/plugins-workspace", rev = "f2c77194d6fc35fdc24ea4db86c583c27cb6db4e" }
+tauri-plugin-dialog = { git = "https://github.com/tauri-apps/plugins-workspace", rev = "f2c77194d6fc35fdc24ea4db86c583c27cb6db4e", default-features = false, features = ["xdg-portal"] }
 tauri-plugin-fs = { git = "https://github.com/tauri-apps/plugins-workspace", rev = "f2c77194d6fc35fdc24ea4db86c583c27cb6db4e" }
 tauri-plugin-http = { git = "https://github.com/tauri-apps/plugins-workspace", rev = "f2c77194d6fc35fdc24ea4db86c583c27cb6db4e" }
 tauri-plugin-opener = { git = "https://github.com/tauri-apps/plugins-workspace", rev = "f2c77194d6fc35fdc24ea4db86c583c27cb6db4e" }
